@@ -7,27 +7,10 @@ try:
 except ImportError:
     pass  # caught by AnsibleAWSModule
 
-from ansible.module_utils.common.dict_transformations import camel_dict_to_snake_dict
-
 from ansible_collections.amazon.aws.plugins.module_utils.modules import AnsibleAWSModule
 
 
 CredentialPlugin = collections.namedtuple('CredentialPlugin', ['name', 'inputs', 'backend'])
-
-
-def _parse_response(response):
-    credentials = response.get("Credentials", {})
-    user = response.get("AssumedRoleUser", {})
-
-    sts_cred = {
-        "access_key": credentials.get("AccessKeyId"),
-        "secret_key": credentials.get("SecretAccessKey"),
-        "session_token": credentials.get("SessionToken"),
-        "expiration": credentials.get("Expiration"),
-    }
-    sts_user = camel_dict_to_snake_dict(user)
-    return sts_cred, sts_user
-
 
 
 def aws_role_credential_backend(**kwargs):
