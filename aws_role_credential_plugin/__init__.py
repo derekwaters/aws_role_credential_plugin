@@ -1,29 +1,56 @@
 import collections
+import boto3
+
+try:
+    from botocore.exceptions import ClientError
+    from botocore.exceptions import ParamValidationError
+except ImportError:
+    pass  # caught by AnsibleAWSModule
+
+from ansible.module_utils.common.dict_transformations import camel_dict_to_snake_dict
+
+from ansible_collections.amazon.aws.plugins.module_utils.modules import AnsibleAWSModule
+
 
 CredentialPlugin = collections.namedtuple('CredentialPlugin', ['name', 'inputs', 'backend'])
 
+
+def _parse_response(response):
+    credentials = response.get("Credentials", {})
+    user = response.get("AssumedRoleUser", {})
+
+    sts_cred = {
+        "access_key": credentials.get("AccessKeyId"),
+        "secret_key": credentials.get("SecretAccessKey"),
+        "session_token": credentials.get("SessionToken"),
+        "expiration": credentials.get("Expiration"),
+    }
+    sts_user = camel_dict_to_snake_dict(user)
+    return sts_cred, sts_user
+
+
+
 def aws_role_credential_backend(**kwargs):
-    #
-    # IMPORTANT:
-    # replace this section of code with Python code that *actually*
-    # interfaces with some third party credential system
-    # (*this* code is just provided for the sake of example)
-    #
-    url = kwargs.get('url')
-    token = kwargs.get('token')
+    access_key = kwargs.get('access_key')
+    secret_key = kwargs.get('access_key')
+    role_arn = kwargs.get('role_arn')
     identifier = kwargs.get('identifier')
 
-    if token != 'VALID':
-        raise ValueError('Invalid token!')
+    # Now call out to boto to assume the role
+    connection = boto3.client(
+        service_name="sts",
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key
+    )
+    response = connection.assume_role(
+        RoleArn=role_arn,
+        RoleSessionName='some_session_identifier'
+    )
 
-    value = {
-        'username': 'mary',
-        'email': 'mary@example.org',
-        'password': 'super-secret'
-    }
+    credentials = response.get("Credentials", {})
 
-    if identifier in value:
-        return value[identifier]
+    if identifier in credentials:
+        return credentials[identifier]
 
     raise ValueError(f'Could not find a value for {identifier}.')
 
@@ -48,14 +75,17 @@ aws_role_credential_plugin = CredentialPlugin(
     # Credential-O-Matic B at identifier=some_key"
     inputs={
         'fields': [{
-            'id': 'url',
-            'label': 'Server URL',
+            'id': 'access_key',
+            'label': 'AWS Access Key',
             'type': 'string',
         }, {
-            'id': 'token',
-            'label': 'Authentication Token',
+            'id': 'secret_key',
+            'label': 'AWS Secret Key',
             'type': 'string',
-            'secret': True,
+        }, {
+            'id': 'role_arn',
+            'label': 'AWS ARN Role Name',
+            'type': 'string',
         }],
         'metadata': [{
             'id': 'identifier',
@@ -63,8 +93,9 @@ aws_role_credential_plugin = CredentialPlugin(
             'type': 'string',
             'help_text': 'The name of the key in My Credential System to fetch.'
         }],
-        'required': ['url', 'token', 'secret_key'],
+        'required': ['access_key', 'secret_key', 'role_arn'],
     },
+
     # backend is a callable function which will be passed all of the values
     # defined in `inputs`; this function is responsible for taking the arguments,
     # interacting with the third party credential management system in question
