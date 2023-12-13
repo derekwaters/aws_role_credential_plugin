@@ -1,5 +1,6 @@
 import collections
 import boto3
+import os
 
 try:
     from botocore.exceptions import ClientError
@@ -31,6 +32,10 @@ def aws_role_credential_backend(**kwargs):
     )
 
     credentials = response.get("Credentials", {})
+
+    os.environ["AWS_SESSION_TOKEN"] = credentials['SessionToken'];
+    os.environ["AWS_SECRET_ACCESS_KEY"] = credentials['SecretAccessKey'];
+    os.environ["AWS_ACCESS_KEY_ID"] = credentials['AccessKeyId'];
 
     if identifier in credentials:
         return credentials[identifier]
