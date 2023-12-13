@@ -10,18 +10,18 @@ To install the plugin:
 3.  Install the Python code in the AAP virtualenv on *each* controller node:
 
 ```shell
-~ awx-python -m pip install .
+awx-python -m pip install .
 ```
 
 4.  From *any* AAP controller node, run this command to register the plugin:
 
 ```shell
-~ awx-manage setup_managed_credential_types
+awx-manage setup_managed_credential_types
 ```
 
 5.  Restart the AAP services:
 
 ```shell
-~ automation-controller-service restart
+automation-controller-service restart
 ```
 
