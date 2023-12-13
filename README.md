@@ -25,3 +25,9 @@ awx-manage setup_managed_credential_types
 automation-controller-service restart
 ```
 
+References:
+
+* https://www.learnaws.org/2022/09/30/aws-boto3-assume-role/
+* https://docs.aws.amazon.com/cli/latest/reference/sts/assume-role.html#output
+* https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html
+
