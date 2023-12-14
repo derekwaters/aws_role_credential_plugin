@@ -5,6 +5,10 @@
     - amazon.aws
   
   tasks:
+    - name: Testing that were started
+      ansible.builtin.debug:
+        msg: "Here we go..."
+        
     - name: Get S3 bucket info
       amazon.aws.s3_bucket_info:
       register: result
