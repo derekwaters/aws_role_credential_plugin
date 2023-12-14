@@ -9,6 +9,10 @@
       ansible.builtin.debug:
         msg: "Here we go..."
         
+    - name: Check token stuff
+      ansible.builtin.debug:
+        msg: "Secret Key: { credentials['SecretAccessKey'] }   Access: { credentials['AccessKeyId'] }    Token: { credentials['SessionToken']}"
+
     - name: Get S3 bucket info
       amazon.aws.s3_bucket_info:
       register: result

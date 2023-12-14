@@ -8,15 +8,13 @@ try:
 except ImportError:
     pass  # caught by AnsibleAWSModule
 
-from ansible_collections.amazon.aws.plugins.module_utils.modules import AnsibleAWSModule
-
 
 CredentialPlugin = collections.namedtuple('CredentialPlugin', ['name', 'inputs', 'backend'])
 
 
 def aws_role_credential_backend(**kwargs):
     access_key = kwargs.get('access_key')
-    secret_key = kwargs.get('access_key')
+    secret_key = kwargs.get('secret_key')
     role_arn = kwargs.get('role_arn')
     aws_region = kwargs.get('aws_region')
     identifier = kwargs.get('identifier')
@@ -38,6 +36,7 @@ def aws_role_credential_backend(**kwargs):
     os.environ["AWS_SESSION_TOKEN"] = credentials['SessionToken'];
     os.environ["AWS_SECRET_ACCESS_KEY"] = credentials['SecretAccessKey'];
     os.environ["AWS_ACCESS_KEY_ID"] = credentials['AccessKeyId'];
+
 
     if identifier in credentials:
         return credentials[identifier]
