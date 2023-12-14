@@ -1,0 +1,13 @@
+---
+- name: Access S3 bucket list in AWS using roles
+  collections:
+    - amazon.aws
+  
+  tasks:
+    - name: Get S3 bucket info
+      amazon.aws.s3_bucket_info:
+      register: result
+
+    - name: Dump bucket info
+      ansible.builtin.debug:
+        var: result
