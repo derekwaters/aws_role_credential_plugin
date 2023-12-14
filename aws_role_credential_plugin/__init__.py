@@ -18,17 +18,19 @@ def aws_role_credential_backend(**kwargs):
     access_key = kwargs.get('access_key')
     secret_key = kwargs.get('access_key')
     role_arn = kwargs.get('role_arn')
+    aws_region = kwargs.get('aws_region')
     identifier = kwargs.get('identifier')
 
     # Now call out to boto to assume the role
     connection = boto3.client(
         service_name="sts",
+        region_name=aws_region,
         aws_access_key_id=access_key,
         aws_secret_access_key=secret_key
     )
     response = connection.assume_role(
         RoleArn=role_arn,
-        RoleSessionName='some_session_identifier'
+        RoleSessionName='AAP_AWS_Role_Session1'
     )
 
     credentials = response.get("Credentials", {})
@@ -71,6 +73,10 @@ aws_role_credential_plugin = CredentialPlugin(
             'label': 'AWS Secret Key',
             'type': 'string',
         }, {
+            'id': 'aws_region',
+            'label': 'AWS Default Region',
+            'type': 'string',
+        }, {
             'id': 'role_arn',
             'label': 'AWS ARN Role Name',
             'type': 'string',
@@ -81,7 +87,7 @@ aws_role_credential_plugin = CredentialPlugin(
             'type': 'string',
             'help_text': 'The name of the key in My Credential System to fetch.'
         }],
-        'required': ['access_key', 'secret_key', 'role_arn'],
+        'required': ['access_key', 'secret_key', 'role_arn', 'aws_region'],
     },
 
     # backend is a callable function which will be passed all of the values
