@@ -1,0 +1,33 @@
+# Make sure you podman login to the Red Hat registry, then:
+# ansible-builder build -t aws-ee:latest
+# To host locally:
+# * run the docker registry:
+#     podman run -d -p 5000:5000 --name registry registry:latest
+# * Add the docker registry as an insecure registry:
+#     vi /etc/containers/registries.conf.d/099-localhost-registry.conf
+#     
+#       [[registry]]
+#       location = "localhost:5000"
+#       insecure = true
+#
+# * Tag the built image:
+#     podman image tag localhost/aws-ee localhost:5000/aws-ee
+# * Push the image:
+#     podman push localhost:5000/aws-ee
+# * Verify the image is there:
+#     curl -X GET http://localhost:5000/v2/_catalog
+
+version: 3
+
+images:
+  base_image:
+    name: "registry.redhat.io/ansible-automation-platform-23/ee-minimal-rhel8:latest"
+
+dependencies:
+  python:
+    - boto3
+    - botocore
+  galaxy: requirements.yml
+
+options:
+  package_manager_path: /usr/bin/microdnf
