@@ -1,5 +1,6 @@
 ---
 - name: Access S3 bucket list in AWS using roles
+  hosts: all
   collections:
     - amazon.aws
   
