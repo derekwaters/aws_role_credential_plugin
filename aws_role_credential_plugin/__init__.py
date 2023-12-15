@@ -8,6 +8,7 @@ try:
 except ImportError:
     pass  # caught by AnsibleAWSModule
 
+_aws_cred_cache = {}
 
 CredentialPlugin = collections.namedtuple('CredentialPlugin', ['name', 'inputs', 'backend'])
 
@@ -19,24 +20,32 @@ def aws_role_credential_backend(**kwargs):
     aws_region = kwargs.get('aws_region')
     identifier = kwargs.get('identifier')
 
-    # Now call out to boto to assume the role
-    connection = boto3.client(
-        service_name="sts",
-        region_name=aws_region,
-        aws_access_key_id=access_key,
-        aws_secret_access_key=secret_key
-    )
-    response = connection.assume_role(
-        RoleArn=role_arn,
-        RoleSessionName='AAP_AWS_Role_Session1'
-    )
+    credentials = _aws_cred_cache.get(role_arn, None)
+    # TODO: If credentials do exist, have they expired?
 
-    credentials = response.get("Credentials", {})
+    if credentials == None:
 
-    os.environ["AWS_SESSION_TOKEN"] = credentials['SessionToken'];
-    os.environ["AWS_SECRET_ACCESS_KEY"] = credentials['SecretAccessKey'];
-    os.environ["AWS_ACCESS_KEY_ID"] = credentials['AccessKeyId'];
+        # Now call out to boto to assume the role
+        connection = boto3.client(
+            service_name="sts",
+            region_name=aws_region,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key
+        )
+        response = connection.assume_role(
+            RoleArn=role_arn,
+            RoleSessionName='AAP_AWS_Role_Session1'
+        )
 
+        credentials = response.get("Credentials", {})
+
+        #new_connection = boto3.Session(aws_access_key_id=credentials['AccessKeyId'],
+        #              aws_secret_access_key=credentials['SecretAccessKey'],
+        #              aws_session_token=credentials['SessionToken'])
+
+        _aws_cred_cache[role_arn] = credentials
+
+    credentials = _aws_cred_cache.get(role_arn, None)
 
     if identifier in credentials:
         return credentials[identifier]
