@@ -11,7 +11,11 @@
         
     - name: Check token stuff
       ansible.builtin.debug:
-        msg: "Secret Key: {{ AWS_SECRET_ACCESS_KEY }}   Access: {{ AWS_ACCESS_KEY_ID }}    Token: {{ AWS_SESSION_TOKEN }}"
+        msg: "Secret Key: {{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}   Access: {{ lookup('env', 'AWS_ACCESS_KEY_ID') }}    Token: {{ lookup('env', 'AWS_SESSION_TOKEN') }}"
+
+    - name: Check other stuff
+      ansible.builtin.debug:
+        msg: "Secret Key: {{ aws_secret_key }}   Access: {{ aws_access_key }}    Token: {{ security_token }}"
 
     - name: Get S3 bucket info
       amazon.aws.s3_bucket_info:
