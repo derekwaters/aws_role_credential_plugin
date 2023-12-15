@@ -17,7 +17,7 @@
       amazon.aws.s3_bucket_info:
         access_key: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
         secret_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
-        session_token: "{{ lookup('env', 'AWS_SECURITY_TOKEN') }}"
+        session_token: "{{ lookup('env', 'AWS_SESSION_TOKEN') }}"
       register: result_easy
 
     - name: Dump bucket info with env vars
