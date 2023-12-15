@@ -11,7 +11,7 @@
         
     - name: Check token stuff
       ansible.builtin.debug:
-        msg: "Secret Key: { AWS_SECRET_ACCESS_KEY }   Access: { AWS_ACCESS_KEY_ID }    Token: { AWS_SESSION_TOKEN }"
+        msg: "Secret Key: {{ AWS_SECRET_ACCESS_KEY }}   Access: {{ AWS_ACCESS_KEY_ID }}    Token: {{ AWS_SESSION_TOKEN }}"
 
     - name: Get S3 bucket info
       amazon.aws.s3_bucket_info:
