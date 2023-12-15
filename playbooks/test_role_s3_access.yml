@@ -13,14 +13,14 @@
       ansible.builtin.debug:
         msg: "Secret Key: {{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}   Access: {{ lookup('env', 'AWS_ACCESS_KEY_ID') }}    Token: {{ lookup('env', 'AWS_SESSION_TOKEN') }}    Token: {{ lookup('env', 'AWS_SECURITY_TOKEN') }}"
 
-    - name: Get S3 bucket info
+    - name: Get S3 bucket info aaa
       amazon.aws.s3_bucket_info:
         access_key: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
         secret_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
         session_token: "{{ lookup('env', 'AWS_SECURITY_TOKEN') }}"
       register: result_easy
 
-    - name: Dump bucket info
+    - name: Dump bucket info aaa
       ansible.builtin.debug:
         var: result_easy
 
