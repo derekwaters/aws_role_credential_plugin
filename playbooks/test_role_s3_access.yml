@@ -15,6 +15,17 @@
 
     - name: Get S3 bucket info
       amazon.aws.s3_bucket_info:
+        access_key: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+        secret_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+        session_token: "{{ lookup('env', 'AWS_SECURITY_TOKEN') }}"
+      register: result_easy
+
+    - name: Dump bucket info
+      ansible.builtin.debug:
+        var: result_easy
+
+    - name: Get S3 bucket info
+      amazon.aws.s3_bucket_info:
       register: result
 
     - name: Dump bucket info
