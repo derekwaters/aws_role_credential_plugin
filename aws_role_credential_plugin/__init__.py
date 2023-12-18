@@ -1,6 +1,9 @@
+"""This module provides the ability to retrieve AWS credentials from a short-lived
+assumed STS role"""
 import collections
+import datetime
+import hashlib
 import boto3
-import os
 
 try:
     from botocore.exceptions import ClientError
@@ -12,18 +15,29 @@ _aws_cred_cache = {}
 
 CredentialPlugin = collections.namedtuple('CredentialPlugin', ['name', 'inputs', 'backend'])
 
-
 def aws_role_credential_backend(**kwargs):
+    """This backend function actually contacts AWS to assume a given role for the specified user"""
     access_key = kwargs.get('access_key')
     secret_key = kwargs.get('secret_key')
     role_arn = kwargs.get('role_arn')
     aws_region = kwargs.get('aws_region')
     identifier = kwargs.get('identifier')
 
-    credentials = _aws_cred_cache.get(role_arn, None)
-    # TODO: If credentials do exist, have they expired?
+    now = datetime.datetime.now()
 
-    if credentials == None:
+    # Generate a hash unique MD5 for combo of user access key and ARN
+    # This should allow two users requesting the same ARN role to have
+    # separate credentials, and should allow the same user to request
+    # multiple roles.
+    #
+    credential_key = hashlib.md5(access_key + role_arn)
+
+    credentials = _aws_cred_cache.get(credential_key, None)
+
+    # If there are no credentials for this user/ARN *or* the credentials
+    # we have in the cache have expired, then we need to contact AWS again.
+    #
+    if (credentials is None) or (credentials['Expiration'] < now):
 
         # Now call out to boto to assume the role
         connection = boto3.client(
@@ -39,9 +53,9 @@ def aws_role_credential_backend(**kwargs):
 
         credentials = response.get("Credentials", {})
 
-        _aws_cred_cache[role_arn] = credentials
+        _aws_cred_cache[credential_key] = credentials
 
-    credentials = _aws_cred_cache.get(role_arn, None)
+    credentials = _aws_cred_cache.get(credential_key, None)
 
     if identifier in credentials:
         return credentials[identifier]
@@ -75,7 +89,8 @@ aws_role_credential_plugin = CredentialPlugin(
             'id': 'identifier',
             'label': 'Identifier',
             'type': 'string',
-            'help_text': 'The name of the key in the assumed AWS role to fetch [AccessKeyId | SecretAccessKey | SessionToken].'
+            'help_text': 'The name of the key in the assumed AWS' +
+                ' role to fetch [AccessKeyId | SecretAccessKey | SessionToken].'
         }],
         'required': ['access_key', 'secret_key', 'role_arn', 'aws_region'],
     },
