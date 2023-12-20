@@ -23,21 +23,21 @@ def aws_role_credential_backend(**kwargs):
     aws_region = kwargs.get('aws_region')
     identifier = kwargs.get('identifier')
 
-    now = datetime.datetime.now()
-
     # Generate a hash unique MD5 for combo of user access key and ARN
     # This should allow two users requesting the same ARN role to have
     # separate credentials, and should allow the same user to request
     # multiple roles.
     #
-    credential_key = hashlib.md5(access_key + role_arn)
+    credential_key_hash = hashlib.md5((access_key + role_arn).encode('utf-8'))
+    credential_key = credential_key_hash.hexdigest()
 
     credentials = _aws_cred_cache.get(credential_key, None)
 
     # If there are no credentials for this user/ARN *or* the credentials
     # we have in the cache have expired, then we need to contact AWS again.
     #
-    if (credentials is None) or (credentials['Expiration'] < now):
+    if (credentials is None) or (
+        credentials['Expiration'] < datetime.datetime.now(credentials['Expiration'].tzinfo)):
 
         # Now call out to boto to assume the role
         connection = boto3.client(
