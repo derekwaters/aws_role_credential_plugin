@@ -1,0 +1,135 @@
+---
+- name: Create scaffolding for test environment for AWS role assumption
+  hosts: all
+  collections:
+    - amazon.aws
+  extra_vars:
+    org_name: "{{ org_name | default('Default') }}"
+    aws_region: "{{ aws_region | default('ap-southeast-2') }}"
+  
+  tasks:
+    - name: Create a test AWS user with no permissions
+      amazon.aws.iam_user:
+        name: test_user
+        state: present
+
+    - name: Create access keys for AWS user
+      amazon.aws.iam_access_key:
+        name: test_user
+        state: present
+        no_log: true
+      register: test_user_access_data
+
+    - name: Create a testing S3 bucket
+      amazon.aws.s3_bucket:
+        name: roleassumetests3bucket
+        state: present
+
+    - name: Create an IAM role to grant access to the S3 bucket
+      amazon.aws.iam_role:
+        name: s3bucketaccessrole
+        # TODO: Put proper policy stuff in here
+        assume_role_policy_document_raw: 'somejson'
+        description: 'Grant access to the S3 bucket to a given user'
+        state: present
+      register: s3bucketaccessrole
+
+    
+    - name: Install plugin in AAP controller
+      ansible.builtin.command:
+        cmd: awx-python -m pip git+https://github.com/derekwaters/aws_role_credential_plugin.git
+
+    - name: Configure plugin in AAP controller
+      ansible.builtin.command:
+        cmd: awx-manage setup_managed_credential_types
+
+    - name: Restart AAP services
+      ansible.builtin.command:
+        cmd: automation-controller-service restart
+
+
+    - name: Create custom credential to assume AWS role
+      ansible.controller.credential:
+        name: aws_sts_assume_role
+        credential_type: 'AWS Role Credential Plugin'
+        organization: Default
+        inputs:
+          access_key: "{{ test_user_access_data.access_key.access_key_id }}"
+          secret_key: "{{ test_user_access_data.secret_access_key }}"
+          role_arn: "{{ s3bucketaccessrole.iam_role.arn }}"
+          aws_region: "{{ aws_region }}"
+        state: present
+    
+    - name: Create AWS credential to run AWS tasks
+      ansible.controller.credential:
+        name: aws_s3_access
+        credential_type: 'Amazon Web Services'
+        organization: Default
+        state: present
+
+    - name: Map custom access key to credential
+      ansible.controller.credential_input_source:
+        input_field_name: username
+        target_credential: aws_s3_access
+        source_credential: aws_sts_assume_role
+        metadata:
+          identifier: AccessKeyId
+        state: present
+
+    - name: Map custom secret key to credential
+      ansible.controller.credential_input_source:
+        input_field_name: password
+        target_credential: aws_s3_access
+        source_credential: aws_sts_assume_role
+        metadata:
+          identifier: SecretAccessKey
+        state: present
+
+    - name: Map custom token to credential
+      ansible.controller.credential_input_source:
+        input_field_name: security_token
+        target_credential: aws_s3_access
+        source_credential: aws_sts_assume_role
+        metadata:
+          identifier: SessionToken
+        state: present
+
+    - name: Create a test project
+      ansible.controller.project:
+        name: list_s3_buckets
+        description: "List S3 Buckets the user has access to"
+        organization: Default
+        scm_url: https://github.com/derekwaters/aws_role_credential_plugin.git
+        scm_update_on_launch: true
+        scm_type: git
+        update_project: true
+        state: present
+
+    - name: Create a test job template
+      ansible.controller.job_template:
+        name: test_list_s3_buckets
+        job_type: "run"
+        organization: Default
+        inventory: "Default Inventory"
+        project: list_s3_buckets
+        playbook: "playbooks/test_role_s3_access.yml"
+        credentials:
+          - aws_s3_access
+        state: present
+
+    - name: Run the test
+      ansible.controller.job_launch:
+        job_template: test_list_s3_buckets
+      register: launched_job
+
+    - name: Wait for the test to complete
+      ansible.controller.job_wait:
+        job_id: "{{ launched_job.id }}"
+        timeout: 120
+
+    - name: Check the status of the job
+      ansible.builtin.debug:
+        msg: TODO!
+
+
+    # Now tear everything down?

@@ -5,24 +5,24 @@
     - amazon.aws
   
   tasks:
-    - name: Testing that were started
+    - name: Testing that the playbook starts
       ansible.builtin.debug:
-        msg: "Here we go..."
+        msg: "Testing AWS STS assume_role credentials"
         
-    - name: Check token stuff
-      ansible.builtin.debug:
-        msg: "Secret Key: {{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}   Access: {{ lookup('env', 'AWS_ACCESS_KEY_ID') }}    Token: {{ lookup('env', 'AWS_SESSION_TOKEN') }}    Token: {{ lookup('env', 'AWS_SECURITY_TOKEN') }}"
+    # - name: Debug token info
+    #   ansible.builtin.debug:
+    #     msg: "Secret Key: {{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}   Access: {{ lookup('env', 'AWS_ACCESS_KEY_ID') }}    Token: {{ lookup('env', 'AWS_SESSION_TOKEN') }}    Token: {{ lookup('env', 'AWS_SECURITY_TOKEN') }}"
 
     - name: Get S3 bucket info with env vars
       amazon.aws.s3_bucket_info:
         access_key: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
         secret_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
         session_token: "{{ lookup('env', 'AWS_SECURITY_TOKEN') }}"
-      register: result_easy
+      register: result_with_envvars
 
-    - name: Dump bucket info with env vars
+    - name: Dump S3 bucket info with env vars
       ansible.builtin.debug:
-        var: result_easy
+        var: result_with_envvars
 
     - name: Get S3 bucket info native
       amazon.aws.s3_bucket_info:
