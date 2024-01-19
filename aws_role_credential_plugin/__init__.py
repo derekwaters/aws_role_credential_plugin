@@ -20,7 +20,7 @@ def aws_role_credential_backend(**kwargs):
     access_key = kwargs.get('access_key')
     secret_key = kwargs.get('secret_key')
     role_arn = kwargs.get('role_arn')
-    aws_region = kwargs.get('aws_region')
+    external_id = kwargs.get('external_id')
     identifier = kwargs.get('identifier')
 
     # Generate a hash unique MD5 for combo of user access key and ARN
@@ -42,13 +42,14 @@ def aws_role_credential_backend(**kwargs):
         # Now call out to boto to assume the role
         connection = boto3.client(
             service_name="sts",
-            region_name=aws_region,
             aws_access_key_id=access_key,
-            aws_secret_access_key=secret_key
+            aws_secret_access_key=secret_key,
+
         )
         response = connection.assume_role(
             RoleArn=role_arn,
-            RoleSessionName='AAP_AWS_Role_Session1'
+            RoleSessionName='AAP_AWS_Role_Session1',
+            ExternalId=external_id
         )
 
         credentials = response.get("Credentials", {})
@@ -75,11 +76,12 @@ aws_role_credential_plugin = CredentialPlugin(
         }, {
             'id': 'secret_key',
             'label': 'AWS Secret Key',
-            'type': 'password',
-        }, {
-            'id': 'aws_region',
-            'label': 'AWS Default Region',
             'type': 'string',
+            'secret': True
+        }, {
+            'id': 'external_id',
+            'label': 'External ID',
+            'type': 'string'
         }, {
             'id': 'role_arn',
             'label': 'AWS ARN Role Name',
@@ -92,7 +94,7 @@ aws_role_credential_plugin = CredentialPlugin(
             'help_text': 'The name of the key in the assumed AWS' +
                 ' role to fetch [AccessKeyId | SecretAccessKey | SessionToken].'
         }],
-        'required': ['access_key', 'secret_key', 'role_arn', 'aws_region'],
+        'required': ['access_key', 'secret_key', 'role_arn'],
     },
     backend = aws_role_credential_backend
 )
