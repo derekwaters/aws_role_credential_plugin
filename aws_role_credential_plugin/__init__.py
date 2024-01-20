@@ -39,13 +39,19 @@ def aws_role_credential_backend(**kwargs):
     if (credentials is None) or (
         credentials['Expiration'] < datetime.datetime.now(credentials['Expiration'].tzinfo)):
 
-        # Now call out to boto to assume the role
-        connection = boto3.client(
-            service_name="sts",
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_key,
+        if (access_key is None or len(access_key) == 0) and (secret_key is None or len(secret_key) == 0):
+            # Connect using credentials in the EE
+            connection = boto3.client(
+                service_name="sts"
+            )
+        else:
+            # Connect to AWS using provided credentials
+            connection = boto3.client(
+                service_name="sts",
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key,
 
-        )
+            )
         response = connection.assume_role(
             RoleArn=role_arn,
             RoleSessionName='AAP_AWS_Role_Session1',
@@ -94,7 +100,7 @@ aws_role_credential_plugin = CredentialPlugin(
             'help_text': 'The name of the key in the assumed AWS' +
                 ' role to fetch [AccessKeyId | SecretAccessKey | SessionToken].'
         }],
-        'required': ['access_key', 'secret_key', 'role_arn'],
+        'required': ['role_arn'],
     },
     backend = aws_role_credential_backend
 )
