@@ -39,7 +39,8 @@ def aws_role_credential_backend(**kwargs):
     if (credentials is None) or (
         credentials['Expiration'] < datetime.datetime.now(credentials['Expiration'].tzinfo)):
 
-        if (access_key is None or len(access_key) == 0) and (secret_key is None or len(secret_key) == 0):
+        if (access_key is None or len(access_key) == 0) and (
+            secret_key is None or len(secret_key) == 0):
             # Connect using credentials in the EE
             connection = boto3.client(
                 service_name="sts"
@@ -49,8 +50,7 @@ def aws_role_credential_backend(**kwargs):
             connection = boto3.client(
                 service_name="sts",
                 aws_access_key_id=access_key,
-                aws_secret_access_key=secret_key,
-
+                aws_secret_access_key=secret_key
             )
         response = connection.assume_role(
             RoleArn=role_arn,
