@@ -22,4 +22,10 @@ podman image tag localhost/aws-ee-with-env localhost:5000/aws-ee-with-env
 podman push localhost:5000/aws-ee-with-env
 '''
 
-5. Now import the image as an EE into AAP
+5. Verify the image is there
+
+'''
+curl -X GET http://localhost:5000/v2/_catalogs
+'''
+
+6. Now import the image as an EE into AAP
